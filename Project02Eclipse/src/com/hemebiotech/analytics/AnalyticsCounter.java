@@ -1,38 +1,43 @@
 package com.hemebiotech.analytics;
 
-import java.io.FileWriter;
-import java.io.BufferedWriter;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 public class AnalyticsCounter {
 
-    public static void main(String[] args) throws Exception {
+    private ISymptomReader reader;
+    private ISymptomWriter writer;
 
+    public AnalyticsCounter(ISymptomReader reader, ISymptomWriter writer) {
+        this.reader = reader;
+        this.writer = writer;
+    }
+
+    public List<String> getSymptoms() {
+        return reader.getSymptoms();
+    }
+
+    public Map<String, Integer> countSymptoms(List<String> symptoms) {
+        Map<String, Integer> symptomCount = new TreeMap<>();
+        for (String symptom : symptoms) {
+            symptomCount.put(symptom, symptomCount.getOrDefault(symptom, 0) + 1);
+        }
+        return symptomCount;
+    }
+
+    public void writeSymptoms(Map<String, Integer> symptomCount) {
+        writer.writeSymptoms(symptomCount);
+    }
+
+    public static void main(String[] args) {
         ISymptomReader reader = new ReadSymptomDataFromFile("symptoms.txt");
-        List<String> symptoms = reader.getSymptoms();
+        ISymptomWriter writer = new WriteSymptomDataToFile("result.out");
 
-        int headacheCount = 0;
-        int rashCount = 0;
-        int pupilCount = 0;
+        AnalyticsCounter counter = new AnalyticsCounter(reader, writer);
 
-        for (String line : symptoms) {
-            System.out.println("symptom from file: " + line);
-
-            if (line.equals("headache")) {
-                headacheCount++;
-            } else if (line.equals("rash")) {
-                rashCount++;
-            } else if (line.contains("pupils")) {
-                pupilCount++;
-            }
-        }
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("result.out"))) {
-            writer.write("headache: " + headacheCount + "\n");
-            writer.write("rash: " + rashCount + "\n");
-            writer.write("dialated pupils: " + pupilCount + "\n");
-        }
-
-        System.out.println("Analysis complete. Results written to result.out");
+        List<String> symptoms = counter.getSymptoms();
+        Map<String, Integer> counts = counter.countSymptoms(symptoms);
+        counter.writeSymptoms(counts);
     }
 }
